@@ -1,0 +1,142 @@
+trigger:
+  branches:
+    include: 
+    - '*'
+
+pool:
+  vmImage: 'ubuntu-latest'
+variables:
+- name: TF_CLI_CONFIG_FILE
+  value: $(System.DefaultWorkingDirectory)/.terraformrc
+- group: terraform_vars
+- name: TF_IN_AUTOMATION
+  value: true
+stages:
+- stage: ci
+  jobs:
+  - job: validate
+    steps:
+    - task: CmdLine@2
+      displayName: Terraform Validate
+      inputs:
+        script: |
+          terraform init -backend=false
+          terraform validate
+  - job: plan
+    steps:
+    - task: CmdLine@2
+      displayName: terraform login
+      inputs:
+        script: echo 'credentials "app.terraform.io" { token = "$(API_KEY)" }' >$(System.DefaultWorkingDirectory)/.terraformrc
+    - task: CmdLine@2
+      env:
+        TF_WORKSPACE: dev
+      displayName: init
+      inputs:
+        script: terraform init -input=false
+    - task: CmdLine@2
+      env:
+        TF_WORKSPACE: dev
+      displayName: plan dev
+      inputs:
+        script: terraform plan -input=false
+    - task: CmdLine@2
+      env:
+        TF_WORKSPACE: qa
+      displayName: plan qa
+      inputs:
+        script: terraform plan -input=false
+    # - task: CmdLine@2
+    #   env:
+    #     TF_WORKSPACE: uat
+    #   displayName: plan uat
+    #   inputs:
+    #     script: terraform plan -input=false
+- stage: deploy_dev
+  dependsOn:
+  - ci
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  jobs:
+  - deployment: dev
+    variables:
+    - name: TF_WORKSPACE
+      value: dev
+    environment:
+      name: dev
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: CmdLine@2
+            displayName: terraform login
+            inputs:
+              script: echo 'credentials "app.terraform.io" { token = "$(API_KEY)" }' >$(System.DefaultWorkingDirectory)/.terraformrc
+          - task: CmdLine@2
+            displayName: init
+            inputs:
+              script: terraform init -input=false
+          - task: CmdLine@2
+            displayName: apply
+            inputs:
+              script: terraform apply -auto-approve
+- stage: deploy_qa
+  dependsOn:
+  - ci
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/feature/ananya'))
+  jobs:
+  - deployment: qa
+    variables:
+    - name: TF_WORKSPACE
+      value: qa
+    environment:
+      name: qa
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: CmdLine@2
+            displayName: terraform login
+            inputs:
+              script: echo 'credentials "app.terraform.io" { token = "$(API_KEY)" }' >$(System.DefaultWorkingDirectory)/.terraformrc
+          - task: CmdLine@2
+            displayName: init
+            inputs:
+              script: terraform init -input=false
+          - task: CmdLine@2
+            displayName: apply
+            inputs:
+              script: terraform apply -auto-approve
+          - task: CmdLine@2
+            displayName: installMongoDB
+            inputs:
+              script: ansible-playbook -b app.yml
+# - stage: deploy_uat
+#   dependsOn:
+#   - ci
+#   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+#   jobs:
+#   - deployment: uat
+#     variables:
+#     - name: TF_WORKSPACE
+#       value: uat
+#     environment:
+#       name: uat
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - checkout: self
+#           - task: CmdLine@2
+#             displayName: terraform login
+#             inputs:
+#               script: echo 'credentials "app.terraform.io" { token = "$(API_KEY)" }' >$(System.DefaultWorkingDirectory)/.terraformrc
+#           - task: CmdLine@2
+#             displayName: init
+#             inputs:
+#               script: terraform init -input=false
+#           - task: CmdLine@2
+#             displayName: apply
+#             inputs:
+#               script: terraform apply -auto-approve

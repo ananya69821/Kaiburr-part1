@@ -1,0 +1,6 @@
+[local]
+localhost ansible_connection=local
+
+[mongo-demo]
+10.100.23.20 ansible_ssh_user=cicd ansible_python_interpreter="/usr/bin/env python3"
+
