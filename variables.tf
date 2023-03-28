@@ -14,7 +14,7 @@ variable "env" {
 
 variable "location" {
   type    = string
-  default = "Canada Central"
+  default = "canadacentral"
 }
 
 variable "sku_tier" {

@@ -27,7 +27,7 @@ stages:
     - task: CmdLine@2
       displayName: terraform login
       inputs:
-        script: echo 'credentials "app.terraform.io" { token = "$(API_KEY)" }' >$(System.DefaultWorkingDirectory)/.terraformrc
+        script: echo 'credentials "app.terraform.io" { token = "$(API_AnanyaOrg)" }' >$(System.DefaultWorkingDirectory)/.terraformrc
     - task: CmdLine@2
       env:
         TF_WORKSPACE: dev
@@ -40,12 +40,12 @@ stages:
       displayName: plan dev
       inputs:
         script: terraform plan -input=false
-    - task: CmdLine@2
-      env:
-        TF_WORKSPACE: qa
-      displayName: plan qa
-      inputs:
-        script: terraform plan -input=false
+    # - task: CmdLine@2
+    #   env:
+    #     TF_WORKSPACE: qa
+    #   displayName: plan qa
+    #   inputs:
+    #     script: terraform plan -input=false
     # - task: CmdLine@2
     #   env:
     #     TF_WORKSPACE: uat
@@ -71,35 +71,7 @@ stages:
           - task: CmdLine@2
             displayName: terraform login
             inputs:
-              script: echo 'credentials "app.terraform.io" { token = "$(API_KEY)" }' >$(System.DefaultWorkingDirectory)/.terraformrc
-          - task: CmdLine@2
-            displayName: init
-            inputs:
-              script: terraform init -input=false
-          - task: CmdLine@2
-            displayName: apply
-            inputs:
-              script: terraform apply -auto-approve
-- stage: deploy_qa
-  dependsOn:
-  - ci
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/feature/ananya'))
-  jobs:
-  - deployment: qa
-    variables:
-    - name: TF_WORKSPACE
-      value: qa
-    environment:
-      name: qa
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
-          - task: CmdLine@2
-            displayName: terraform login
-            inputs:
-              script: echo 'credentials "app.terraform.io" { token = "$(API_KEY)" }' >$(System.DefaultWorkingDirectory)/.terraformrc
+              script: echo 'credentials "app.terraform.io" { token = "$(API_AnanyaOrg)" }' >$(System.DefaultWorkingDirectory)/.terraformrc
           - task: CmdLine@2
             displayName: init
             inputs:
@@ -109,9 +81,41 @@ stages:
             inputs:
               script: terraform apply -auto-approve
           - task: CmdLine@2
-            displayName: installMongoDB
+            displayName: AnsibleCommand
             inputs:
-              script: ansible-playbook -b app.yml
+              script: ansible-playbook -i ./ansiserver/ansiserver playbook.yaml
+# - stage: deploy_qa
+#   dependsOn:
+#   - ci
+#   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/feature/ananya'))
+#   jobs:
+#   - deployment: qa
+#     variables:
+#     - name: TF_WORKSPACE
+#       value: qa
+#     environment:
+#       name: qa
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - checkout: self
+#           - task: CmdLine@2
+#             displayName: terraform login
+#             inputs:
+#               script: echo 'credentials "app.terraform.io" { token = "$(API_KEY)" }' >$(System.DefaultWorkingDirectory)/.terraformrc
+#           - task: CmdLine@2
+#             displayName: init
+#             inputs:
+#               script: terraform init -input=false
+#           - task: CmdLine@2
+#             displayName: apply
+#             inputs:
+#               script: terraform apply -auto-approve
+#           - task: CmdLine@2
+#             displayName: installMongoDB
+#             inputs:
+#               script: ansible-playbook -b app.yml
 # - stage: deploy_uat
 #   dependsOn:
 #   - ci

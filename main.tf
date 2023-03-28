@@ -1,7 +1,7 @@
 terraform {
   backend "remote" {
     hostname     = "app.terraform.io"
-    organization = "Sunwing"
+    organization = "Ananya-Org"
 
     workspaces {
       prefix = "starter-"

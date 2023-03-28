@@ -1,6 +1,7 @@
 - hosts : mongo-demo
   tasks :
   - name: install mongoDB 
+    sudo: yes
     apt: 
       name: mongodb
       state: present
@@ -31,10 +32,3 @@
       name: mongodb
       enabled: yes
       state: started
-
-  - name: install ntp
-    apt: 
-      name: ntp
-      state: present
-      update_cache: yes
-    

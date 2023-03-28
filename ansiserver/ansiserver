@@ -1,6 +1,2 @@
-[local]
-localhost ansible_connection=local
-
 [mongo-demo]
-10.100.23.20 ansible_ssh_user=cicd ansible_python_interpreter="/usr/bin/env python3"
-
+4.204.243.164 ansible_connection=ssh ansible_ssh_user=testadmin ansible_ssh_pass=Password1234!
